@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register Face</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="script.js"></script>
+</head>
+<body>
+<div class="container">
+<h2>Register Student</h2>
+
+<input id="name" placeholder="Name">
+<input id="roll" placeholder="Roll Number">
+
+<video id="video" autoplay muted></video>
+<button class="btn" onclick="register()">Capture & Save</button>
+
+<p id="msg"></p>
+</div>
+
+<script>
+loadModels().then(()=>startCamera("video"));
+
+async function register(){
+    const descriptor = await captureDescriptor("video");
+    if(!descriptor){
+        msg.innerText="Face not detected";
+        return;
+    }
+
+    const student={
+        name:name.value,
+        roll:roll.value,
+        descriptor:descriptor
+    };
+
+    let students=JSON.parse(localStorage.getItem("students")||"[]");
+    students.push(student);
+    localStorage.setItem("students",JSON.stringify(students));
+
+    msg.innerText="Student Registered";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mark Attendance</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="script.js"></script>
+</head>
+<body>
+<div class="container">
+<h2>Mark Attendance</h2>
+
+<video id="video" autoplay muted></video>
+<button class="btn" onclick="mark()">Scan Face</button>
+
+<p id="msg"></p>
+</div>
+
+<script>
+loadModels().then(()=>startCamera("video"));
+
+async function mark(){
+    const descriptor=await captureDescriptor("video");
+    if(!descriptor){
+        msg.innerText="Face not detected";
+        return;
+    }
+
+    let students=JSON.parse(localStorage.getItem("students")||"[]");
+
+    let matched=null;
+
+    for(let s of students){
+        if(distance(descriptor,s.descriptor)<0.5){
+            matched=s;
+            break;
+        }
+    }
+
+    if(!matched){
+        msg.innerText="Student not recognized";
+        return;
+    }
+
+    let attendance=JSON.parse(localStorage.getItem("attendance")||"[]");
+    attendance.push({
+        name:matched.name,
+        roll:matched.roll,
+        date:new Date().toLocaleString()
+    });
+
+    localStorage.setItem("attendance",JSON.stringify(attendance));
+
+    msg.innerText="Attendance Marked for "+matched.name;
+}
+</script>
+</body>
+</html>
