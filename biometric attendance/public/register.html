@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register Face - Biometric System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+
+    <style>
+        body {
+            background: #f4f6f9;
+            font-family: Arial;
+            text-align: center;
+            padding-top: 40px;
+        }
+
+        .card {
+            background: white;
+            width: 400px;
+            margin: auto;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px;
+            width: 100%;
+            background: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Student Face Registration</h2>
+
+    <input type="text" id="name" placeholder="Student Name">
+    <input type="text" id="roll" placeholder="Roll Number">
+
+    <video id="video" autoplay muted></video>
+
+    <button onclick="registerFace()">Capture & Register</button>
+
+    <div id="status"></div>
+</div>
+
+<script>
+const video = document.getElementById("video");
+
+// Start Camera
+async function startCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+}
+
+// Load face-api models
+async function loadModels() {
+    const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js/models";
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+}
+
+async function registerFace() {
+    const name = document.getElementById("name").value;
+    const roll = document.getElementById("roll").value;
+    const status = document.getElementById("status");
+
+    if (!name || !roll) {
+        status.innerText = "Enter name and roll number";
+        return;
+    }
+
+    status.innerText = "Detecting face...";
+
+    const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+    if (!detection) {
+        status.innerText = "No face detected. Try again.";
+        return;
+    }
+
+    const descriptor = Array.from(detection.descriptor);
+
+    // Send to backend
+    const res = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: name,
+            roll: roll,
+            descriptor: descriptor
+        })
+    });
+
+    const text = await res.text();
+    status.innerText = text;
+}
+
+// Initialize
+loadModels().then(startCamera);
+</script>
+
+</body>
+</html>
